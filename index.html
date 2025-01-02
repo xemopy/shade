@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shade!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        #image {
+            max-width: 90%;
+            max-height: 500px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .controls {
+          padding: 10px 20px;
+          border: none;
+          background-color: #007BFF;
+          color: white;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+        .controls button, .controls .upload-label {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .controls button:hover, .controls .upload-label:hover {
+            background-color: #0056b3;
+        }
+        .download-container {
+            margin-top: 20px;
+        }
+        .download-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        .download-button:hover {
+            background-color: #1e7e34;
+        }
+        .layer-list {
+            margin-top: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+        .layer-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .layer-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .layer-list li:last-child {
+            border-bottom: none;
+        }
+        .layer-list button {
+            background-color: #DC3545;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+        .layer-list button:hover {
+            background-color: #a71d2a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shade</h1>
+        <label class="upload-label" id="upload-label">
+            Upload Image
+            <input type="file" id="upload" accept="image/*" style="display: none;">
+        </label>
+        <br>
+        <img id="image" src="" alt="">
+        <div class="controls">
+            <button onclick="addEffect('posterize')">Posterize</button>
+            <button onclick="addEffect('blur')">Blur</button>
+            <button onclick="addEffect('tint')">Tint</button>
+            <button onclick="addEffect('darkify')">Darkify</button>
+            <button onclick="addEffect('brightify')">Brightify</button>
+            <button onclick="addEffect('pastelify')">Pastelify</button>
+            <button onclick="addEffect('neonify')">Neonify</button>
+            <button onclick="addEffect('coldify')">Coldify</button>
+            <button onclick="addEffect('warmify')">Warmify</button>
+        </div>
+        <div class="layer-list">
+            <h3>Effect Layers</h3>
+            <ul id="effect-layers">
+            </ul>
+        </div>
+        <div class="download-container">
+            <button class="download-button" onclick="downloadImage()">Download Image</button>
+        </div>
+    </div>
+    <script>
+        const image = document.getElementById('image');
+        const upload = document.getElementById('upload');
+        const uploadLabel = document.getElementById('upload-label');
+        const effectLayers = document.getElementById('effect-layers');
+
+        let filters = [];
+
+        upload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    image.src = e.target.result;
+                    filters = [];
+                    updateImageFilters();
+                    updateLayersUI();
+                    uploadLabel.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function addEffect(effect) {
+            filters.push(effect);
+            updateImageFilters();
+            updateLayersUI();
+        }
+
+        function removeEffect(index) {
+            filters.splice(index, 1);
+            updateImageFilters();
+            updateLayersUI();
+        }
+
+        function moveEffect(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= filters.length) return;
+            const [movedEffect] = filters.splice(index, 1);
+            filters.splice(newIndex, 0, movedEffect);
+            updateImageFilters();
+            updateLayersUI();
+        }
+
+        function updateImageFilters() {
+            const filterMap = {
+                posterize: 'contrast(150%) saturate(50%)',
+                blur: 'blur(5px)',
+                tint: 'sepia(50%)',
+                darkify: 'brightness(50%)',
+                brightify: 'brightness(150%)',
+                pastelify: 'saturate(50%) brightness(120%)',
+                neonify: 'contrast(200%) saturate(200%)',
+                coldify: 'hue-rotate(-30deg)',
+                warmify: 'hue-rotate(30deg)',
+            };
+
+            const appliedFilters = filters.map(effect => filterMap[effect]).join(' ');
+            image.style.filter = appliedFilters;
+        }
+
+        function updateLayersUI() {
+            effectLayers.innerHTML = '';
+            filters.forEach((effect, index) => {
+                const li = document.createElement('li');
+                li.textContent = effect.charAt(0).toUpperCase() + effect.slice(1);
+
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.onclick = () => removeEffect(index);
+
+                const upButton = document.createElement('button');
+                upButton.textContent = 'Up';
+                upButton.onclick = () => moveEffect(index, -1);
+
+                const downButton = document.createElement('button');
+                downButton.textContent = 'Down';
+                downButton.onclick = () => moveEffect(index, 1);
+
+                li.appendChild(upButton);
+                li.appendChild(downButton);
+                li.appendChild(removeButton);
+                effectLayers.appendChild(li);
+            });
+        }
+
+        function downloadImage() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            ctx.filter = getComputedStyle(image).filter;
+            ctx.drawImage(image, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = 'edited-image.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
